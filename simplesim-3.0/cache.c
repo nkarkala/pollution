@@ -57,6 +57,7 @@
 #include "misc.h"
 #include "machine.h"
 #include "cache.h"
+#include "conversion.c"
 
 /* cache access macros */
 #define CACHE_TAG(cp, addr)	((addr) >> (cp)->tag_shift)
@@ -140,11 +141,17 @@
 #define BOUND_POS(N)		((int)(MIN(MAX(0, (N)), 2147483647)))
 
 
-/* Replace polluted CODE 
-cache_blk_t replace_polluted(cache_blk_t *blks){
-  while(
+/* coen  Replace polluted CODE  */
+PBLK replace_polluted(struct cache_blk_t *head){
+    PBLK blk=NULL;
+    for (blk=head;blk;blk=blk->way_next)
+        {
+          if (blk->polluted == 0)
+            return blk;
+        }
+     printf("returning NULL\n");
+    return NULL;
 }
-*/
 
 /* unlink BLK from the hash table bucket chain in SET */
 static void
@@ -518,6 +525,7 @@ cache_access(struct cache_t *cp,	/* cache to access */
 	     byte_t **udata,		/* for return of user data ptr */
 	     md_addr_t *repl_addr)	/* for address of replaced block */
 {
+   
   
   byte_t *p = vp;
   md_addr_t tag = CACHE_TAG(cp, addr);
@@ -525,7 +533,7 @@ cache_access(struct cache_t *cp,	/* cache to access */
   md_addr_t bofs = CACHE_BLK(cp, addr);
   struct cache_blk_t *blk, *repl;
   int lat = 0;
-
+  int pindex=getIndex(addr);  // coen
   /* default replacement address */
   if (repl_addr)
     *repl_addr = 0;
@@ -579,11 +587,15 @@ cache_access(struct cache_t *cp,	/* cache to access */
 
   /* **MISS** */
   cp->misses++;
-  /*
-  repl=replace_polluted(cp->sets[set].blks);
+ 
+  /*coen */
+  if(!strcmp(cp->name,"ul2")){
+    repl=replace_polluted(cp->sets[set].way_head);
+  }else {
+    repl=NULL;
+  }
+  
   if(repl==NULL){
-   
-  */
 
   /* select the appropriate block to replace, and re-link this entry to
      the appropriate place in the way list */
@@ -602,7 +614,8 @@ cache_access(struct cache_t *cp,	/* cache to access */
   default:
     panic("bogus replacement policy");
   }
-
+}
+ 
   /* remove this block from the hash bucket chain, if hash exists */
   if (cp->hsize)
     unlink_htab_ent(cp, &cp->sets[set], repl);
@@ -610,10 +623,11 @@ cache_access(struct cache_t *cp,	/* cache to access */
   /* blow away the last block to hit */
   cp->last_tagset = 0;
   cp->last_blk = NULL;
-
+   
   /* write back replaced block data */
   if (repl->status & CACHE_BLK_VALID)
     {
+    
       cp->replacements++;
 
       if (repl_addr)
@@ -638,10 +652,10 @@ cache_access(struct cache_t *cp,	/* cache to access */
 	}
     }
 
+
   /* update block tags */
   repl->tag = tag;
   repl->status = CACHE_BLK_VALID;	/* dirty bit set on update */
-
   /* read data block */
   lat += cp->blk_access_fn(Read, CACHE_BADDR(cp, addr), cp->bsize,
 			   repl, now+lat);
@@ -669,12 +683,13 @@ cache_access(struct cache_t *cp,	/* cache to access */
 
   /* return latency of the operation */
   /* Cache miss */
-  /*CODE
-  if(bypass[] > 3)
-    repl->polluted=1;
-  else
-    bypass[]++;
- */
+  /* coen */
+  if(!strcmp(cp->name,"ul2")){
+    if(bypass[pindex] > 3)
+      repl->polluted=1;
+    else
+      bypass[pindex]++;
+  }
   return lat;
  
 
@@ -709,13 +724,17 @@ cache_access(struct cache_t *cp,	/* cache to access */
   /* get user block data, if requested and it exists */
   if (udata)
     *udata = blk->user_data;
-  /*CODE
-  if(bypass[] > 3)
-    repl->polluted=1;
-  else
-    bypass[]++;
+  
+  /*coen */
+  if(!strcmp(cp->name,"ul2")){
+    if(bypass[pindex] > 3)
+      blk->polluted=1;
+    else
+      bypass[pindex]++;
+  }
+ 
   return lat;
-  */
+
 
   /* return first cycle data is available to access */
   return (int) MAX(cp->hit_latency, (blk->ready - now));
@@ -746,15 +765,16 @@ cache_access(struct cache_t *cp,	/* cache to access */
   /* record the last block to hit */
   cp->last_tagset = CACHE_TAGSET(cp, addr);
   cp->last_blk = blk;
+  /*coen*/
+  if(!strcmp(cp->name,"ul2")){
+    if(bypass[pindex] > 3)
+      blk->polluted=1;
+    else
+      bypass[pindex]++;
+  }
   
-  /*
-  if(bypass[] > 3)
-    repl->polluted=1;
-  else
-    bypass[]++;
   return lat;
-*/
-  
+
   /* return first cycle data is available to access */
   return (int) MAX(cp->hit_latency, (blk->ready - now));
 }
