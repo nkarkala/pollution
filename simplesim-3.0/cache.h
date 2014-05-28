@@ -98,6 +98,9 @@
    speed block access, this macro decides if a cache is "highly associative" */
 #define CACHE_HIGHLY_ASSOC(cp)	((cp)->assoc > 4)
 
+/*bypass buffer */
+int bypass[2048];
+
 /* cache replacement policy */
 enum cache_policy {
   LRU,		/* replace least recently used block (perfect LRU) */
@@ -130,6 +133,9 @@ struct cache_blk_t
      defined in this structure! */
   byte_t data[1];		/* actual data block starts here, block size
 				   should probably be a multiple of 8 */
+/* Additional fields for the pollution algo */
+  int used;
+  int polluted;
 };
 
 /* cache set definition (one or more blocks sharing the same set index) */
