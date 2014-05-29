@@ -616,7 +616,9 @@ cache_access(struct cache_t *cp,	/* cache to access */
     panic("bogus replacement policy");
   }
   // coen 
-  bypass[repl->index] = repl->used * 3; 
+  if(!strcmp(cp->name,"ul2")){
+    bypass[repl->index] = repl->used * 3; 
+  }
   
 }
  
