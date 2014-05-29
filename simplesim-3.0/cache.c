@@ -146,10 +146,11 @@ PBLK replace_polluted(struct cache_blk_t *head){
     PBLK blk=NULL;
     for (blk=head;blk;blk=blk->way_next)
         {
+          if(blk->status==0)
+           return blk;
           if (blk->polluted == 0)
             return blk;
         }
-     printf("returning NULL\n");
     return NULL;
 }
 

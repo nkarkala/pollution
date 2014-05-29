@@ -1,5 +1,4 @@
 /* cache.h - cache module interfaces */
-
 /* SimpleScalar(TM) Tool Suite
  * Copyright (C) 1994-2003 by Todd M. Austin, Ph.D. and SimpleScalar, LLC.
  * All Rights Reserved. 
