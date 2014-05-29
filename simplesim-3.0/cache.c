@@ -57,7 +57,9 @@
 #include "misc.h"
 #include "machine.h"
 #include "cache.h"
-#include "conversion.c"
+
+/*najuka added*/
+//#include "conversion.c"
 
 /* cache access macros */
 #define CACHE_TAG(cp, addr)	((addr) >> (cp)->tag_shift)
@@ -140,19 +142,6 @@
 /* bound sqword_t/dfloat_t to positive int */
 #define BOUND_POS(N)		((int)(MIN(MAX(0, (N)), 2147483647)))
 
-
-/* coen  Replace polluted CODE  */
-PBLK replace_polluted(struct cache_blk_t *head){
-    PBLK blk=NULL;
-    for (blk=head;blk;blk=blk->way_next)
-        {
-          if (blk->polluted == 0)
-            return blk;
-        }
-     printf("returning NULL\n");
-    return NULL;
-}
-
 /* unlink BLK from the hash table bucket chain in SET */
 static void
 unlink_htab_ent(struct cache_t *cp,		/* cache to update */
@@ -201,10 +190,6 @@ link_htab_ent(struct cache_t *cp,		/* cache to update */
 
 /* where to insert a block onto the ordered way chain */
 enum list_loc_t { Head, Tail };
-
-
-
-
 
 /* insert BLK into the order way chain in SET at location WHERE */
 static void
@@ -430,19 +415,19 @@ cache_char2policy(char c)		/* replacement policy as a char */
   default: fatal("bogus replacement policy, `%c'", c);
   }
 }
+
 /* print cache configuration */
 void
-cache_config(struct cache_t *cp,       /* cache instance */
-            FILE *stream)              /* output stream */
+cache_config(struct cache_t *cp,	/* cache instance */
+	     FILE *stream)		/* output stream */
 {
   fprintf(stream,
-         "cache: %s: %d sets, %d byte blocks, %d bytes user data/block\n",
-         cp->name, cp->nsets, cp->bsize, cp->usize);
+	  "cache: %s: %d sets, %d byte blocks, %d bytes user data/block\n",
+	  cp->name, cp->nsets, cp->bsize, cp->usize);
   fprintf(stream,
-         "cache: %s: %d-way, `%s' replacement policy, write-back\n",
-         cp->name, cp->assoc,
-         cp->policy == LRU ? "LRU"
-
+	  "cache: %s: %d-way, `%s' replacement policy, write-back\n",
+	  cp->name, cp->assoc,
+	  cp->policy == LRU ? "LRU"
 	  : cp->policy == Random ? "Random"
 	  : cp->policy == FIFO ? "FIFO"
 	  : (abort(), ""));
@@ -509,6 +494,26 @@ cache_stats(struct cache_t *cp,		/* cache instance */
 	  (double)cp->invalidations/sum);
 }
 
+/* najuka added*/
+void do_bypass () {
+	return;
+}
+
+/* najuka added*/
+int getIndex (unsigned int addr ) {
+        short s1,s2,s3 = 0;
+        int addr_x = 0;
+        s1 = (addr >> 20) & 0xFFF;
+       // printf("%d\n", s1);
+        s2 = (addr >> 8)  & 0xFFF;
+        //printf("%d\n", s2);
+        s3 = (addr & 0xFF);
+        //printf("%d\n", s3);
+        addr_x = s1^s2^s3;
+        return addr_x;
+}
+
+
 /* access a cache, perform a CMD operation on cache CP at address ADDR,
    places NBYTES of data at *P, returns latency of operation if initiated
    at NOW, places pointer to block user data in *UDATA, *P is untouched if
@@ -516,7 +521,6 @@ cache_stats(struct cache_t *cp,		/* cache instance */
    user data is attached to blocks */
 unsigned int				/* latency of access in cycles */
 cache_access(struct cache_t *cp,	/* cache to access */
-
 	     enum mem_cmd cmd,		/* access type, Read or Write */
 	     md_addr_t addr,		/* address of access */
 	     void *vp,			/* ptr to buffer for input/output */
@@ -525,7 +529,6 @@ cache_access(struct cache_t *cp,	/* cache to access */
 	     byte_t **udata,		/* for return of user data ptr */
 	     md_addr_t *repl_addr)	/* for address of replaced block */
 {
-   
   
   byte_t *p = vp;
   md_addr_t tag = CACHE_TAG(cp, addr);
@@ -533,7 +536,10 @@ cache_access(struct cache_t *cp,	/* cache to access */
   md_addr_t bofs = CACHE_BLK(cp, addr);
   struct cache_blk_t *blk, *repl;
   int lat = 0;
-  int pindex=getIndex(addr);  // coen
+  /*najuka added*/
+  int pindex=getIndex(addr);
+	if (strcmp (cp->name , "ul2") == 0 ) 
+	//	printf ("%d,%d,%d\n",pindex , bypass_buff[pindex] , addr) ;
   /* default replacement address */
   if (repl_addr)
     *repl_addr = 0;
@@ -587,16 +593,16 @@ cache_access(struct cache_t *cp,	/* cache to access */
 
   /* **MISS** */
   cp->misses++;
- 
-  /*coen */
-  if(!strcmp(cp->name,"ul2")){
-    repl=replace_polluted(cp->sets[set].way_head);
-  }else {
-    repl=NULL;
-  }
-  
-  if(repl==NULL){
 
+  /*najuka added*/
+  /*if ( (strcmp (cp->name , "ul2") == 0) && ((cp->misses % 8000) == 0)) {
+	int i = 0;
+	for ( i = 0; i < N_MAX_BUFF_SIZE; i++) {
+		bypass_buff[i] = 0;
+	}
+	//memset(bypass_buff, 0, (N_MAX_BUFF_SIZE - 10) * sizeof(int));
+	//bypass_buff[N_MAX_BUFF_SIZE] = { 0 };	
+  }*/
   /* select the appropriate block to replace, and re-link this entry to
      the appropriate place in the way list */
   switch (cp->policy) {
@@ -612,13 +618,16 @@ cache_access(struct cache_t *cp,	/* cache to access */
     }
     break;
   default:
+   { 
     panic("bogus replacement policy");
+    break;
+   }
   }
-  // coen 
-  bypass[repl->index] = repl->used * 3; 
-  
-}
- 
+	/*najuka added*/
+	if (strcmp(cp->name,"ul2") == 0 ) {
+		bypass_buff[repl->index] = repl->used * 3;
+	}
+
   /* remove this block from the hash bucket chain, if hash exists */
   if (cp->hsize)
     unlink_htab_ent(cp, &cp->sets[set], repl);
@@ -626,11 +635,10 @@ cache_access(struct cache_t *cp,	/* cache to access */
   /* blow away the last block to hit */
   cp->last_tagset = 0;
   cp->last_blk = NULL;
-   
+
   /* write back replaced block data */
   if (repl->status & CACHE_BLK_VALID)
     {
-    
       cp->replacements++;
 
       if (repl_addr)
@@ -654,11 +662,22 @@ cache_access(struct cache_t *cp,	/* cache to access */
 				   cp->bsize, repl, now+lat);
 	}
     }
+  /*najuka added*/
+  repl->index = pindex;
 
-
+  if (strcmp(cp->name,"ul2") == 0 ) {
+        if (bypass_buff[pindex] < 3) {
+		//printf ("Pindex = %d and bypass %d addr %d\n",pindex , bypass_buff[pindex] , addr) ;
+                bypass_buff[pindex]++;
+                do_bypass();	
+		return;
+ 	 }
+  }
+      
   /* update block tags */
   repl->tag = tag;
   repl->status = CACHE_BLK_VALID;	/* dirty bit set on update */
+ 
   /* read data block */
   lat += cp->blk_access_fn(Read, CACHE_BADDR(cp, addr), cp->bsize,
 			   repl, now+lat);
@@ -679,26 +698,25 @@ cache_access(struct cache_t *cp,	/* cache to access */
 
   /* update block status */
   repl->ready = now+lat;
-
+  
+  /*najuka added */
+  if (strcmp(cp->name,"ul2") == 0 ) {
+  repl->used = 0; 
+  }		
   /* link this entry back into the hash table */
   if (cp->hsize)
     link_htab_ent(cp, &cp->sets[set], repl);
 
-  repl->index=pindex;
   /* return latency of the operation */
-  /* Cache miss */
-  /* coen */
-  if(!strcmp(cp->name,"ul2")){
-    if(bypass[pindex] > 3)
-      repl->polluted=1;
-    else
-      bypass[pindex]++;
-  }
   return lat;
- 
+
 
  cache_hit: /* slow hit handler */
-  
+ 
+ /*najuka added*/
+   if (strcmp(cp->name,"ul2") == 0) {	
+  	blk->used = 1;
+  }
   /* **HIT** */
   cp->hits++;
 
@@ -728,22 +746,6 @@ cache_access(struct cache_t *cp,	/* cache to access */
   /* get user block data, if requested and it exists */
   if (udata)
     *udata = blk->user_data;
-  
-  /*coen */
-  if(!strcmp(cp->name,"ul2")){
-    if(bypass[pindex] > 3){
-      if( blk->polluted==1){
-        blk->used=1;
-      }
-      else
-        blk->polluted=1;
-    }
-    else
-      bypass[pindex]++;
-  }
- 
-  return lat;
-
 
   /* return first cycle data is available to access */
   return (int) MAX(cp->hit_latency, (blk->ready - now));
@@ -751,6 +753,11 @@ cache_access(struct cache_t *cp,	/* cache to access */
  cache_fast_hit: /* fast hit handler */
   
   /* **FAST HIT** */
+  /*najuka added*/
+   if (strcmp(cp->name,"ul2") == 0 ) {
+  	blk->used = 1;
+  }
+
   cp->hits++;
 
   /* copy data out of cache block, if block exists */
@@ -774,19 +781,6 @@ cache_access(struct cache_t *cp,	/* cache to access */
   /* record the last block to hit */
   cp->last_tagset = CACHE_TAGSET(cp, addr);
   cp->last_blk = blk;
-  /*coen*/
-  if(!strcmp(cp->name,"ul2")){
-    if(bypass[pindex] > 3){
-      if(blk->polluted==1)
-        blk->used=1;
-      else
-        blk->polluted=1;
-    }
-    else
-      bypass[pindex]++;
-  }
-  
-  return lat;
 
   /* return first cycle data is available to access */
   return (int) MAX(cp->hit_latency, (blk->ready - now));

@@ -59,6 +59,12 @@
 #include "machine.h"
 #include "memory.h"
 #include "stats.h"
+#include<math.h>
+#include<assert.h>
+
+/*najuka added :*/
+#define N_MAX_BUFF_SIZE 5000 
+short bypass_buff[N_MAX_BUFF_SIZE];
 
 /*
  * This module contains code to implement various cache-like structures.  The
@@ -98,9 +104,6 @@
    speed block access, this macro decides if a cache is "highly associative" */
 #define CACHE_HIGHLY_ASSOC(cp)	((cp)->assoc > 4)
 
-/*coen  bypass buffer */
-int bypass[5000];
-
 /* cache replacement policy */
 enum cache_policy {
   LRU,		/* replace least recently used block (perfect LRU) */
@@ -126,6 +129,10 @@ struct cache_blk_t
   unsigned int status;		/* block status, see CACHE_BLK_* defs above */
   tick_t ready;		/* time when block will be accessible, field
 				   is set when a miss fetch is initiated */
+/*najuka added */
+  unsigned int index;
+  int used;
+
   byte_t *user_data;		/* pointer to user defined data, e.g.,
 				   pre-decode data or physical page address */
   /* DATA should be pointer-aligned due to preceeding field */
@@ -133,14 +140,8 @@ struct cache_blk_t
      defined in this structure! */
   byte_t data[1];		/* actual data block starts here, block size
 				   should probably be a multiple of 8 */
-/* coen Additional fields for the pollution algo */
-  int used;
-  int polluted;
-  unsigned int index;
 };
 
-/*coen */
-typedef struct cache_blk_t *PBLK;
 /* cache set definition (one or more blocks sharing the same set index) */
 struct cache_set_t
 {
