@@ -136,6 +136,7 @@ struct cache_blk_t
 /* coen Additional fields for the pollution algo */
   int used;
   int polluted;
+  unsigned int index;
 };
 
 /*coen */

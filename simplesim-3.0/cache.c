@@ -614,6 +614,9 @@ cache_access(struct cache_t *cp,	/* cache to access */
   default:
     panic("bogus replacement policy");
   }
+  // coen 
+  bypass[repl->index] = repl->used * 3; 
+  
 }
  
   /* remove this block from the hash bucket chain, if hash exists */
@@ -681,6 +684,7 @@ cache_access(struct cache_t *cp,	/* cache to access */
   if (cp->hsize)
     link_htab_ent(cp, &cp->sets[set], repl);
 
+  repl->index=pindex;
   /* return latency of the operation */
   /* Cache miss */
   /* coen */
@@ -727,8 +731,13 @@ cache_access(struct cache_t *cp,	/* cache to access */
   
   /*coen */
   if(!strcmp(cp->name,"ul2")){
-    if(bypass[pindex] > 3)
-      blk->polluted=1;
+    if(bypass[pindex] > 3){
+      if( blk->polluted==1){
+        blk->used=1;
+      }
+      else
+        blk->polluted=1;
+    }
     else
       bypass[pindex]++;
   }
@@ -767,8 +776,12 @@ cache_access(struct cache_t *cp,	/* cache to access */
   cp->last_blk = blk;
   /*coen*/
   if(!strcmp(cp->name,"ul2")){
-    if(bypass[pindex] > 3)
-      blk->polluted=1;
+    if(bypass[pindex] > 3){
+      if(blk->polluted==1)
+        blk->used=1;
+      else
+        blk->polluted=1;
+    }
     else
       bypass[pindex]++;
   }
