@@ -603,8 +603,17 @@ cache_access(struct cache_t *cp,	/* cache to access */
 
   /* **MISS** */
   cp->misses++;
+    
+  if(!strcmp(cp->name,"ul2")){
+    if(cp->misses % 4000 == 0){
+      int i;
+      for(i=0;i<5000;i++){
+        bypass[i]=0; 
+      }
+    }
+  }
 
-  if(bypass[pindex] < 2){
+  if(bypass[pindex] < 3){
      bypass[pindex]++;
      return lat;
   }
@@ -628,7 +637,7 @@ cache_access(struct cache_t *cp,	/* cache to access */
   }
   
   if(!strcmp(cp->name,"ul2")){
-    bypass[repl->pindex]=repl->used*2;
+    bypass[repl->pindex]=repl->used*3;
   }
   /* remove this block from the hash bucket chain, if hash exists */
   if (cp->hsize)
