@@ -98,7 +98,7 @@
 #define CACHE_HIGHLY_ASSOC(cp)	((cp)->assoc > 4)
 
 /*coen  bypass buffer */
-int bypass[5000];
+int bypass[17000];
 
 /* cache replacement policy */
 enum cache_policy {

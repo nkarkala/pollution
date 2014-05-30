@@ -587,7 +587,15 @@ cache_access(struct cache_t *cp,	/* cache to access */
   /* cache block not found */
 
   /* **MISS** */
+  
   cp->misses++;
+ 
+  if(!strcmp(cp->name,"ul2") && (cp->misses % 500)==0){
+    int i;
+    for(i=0;i<5000;i++)
+     bypass[i]=0;
+  }
+
  
   /*coen */
   if(!strcmp(cp->name,"ul2")){
@@ -597,7 +605,11 @@ cache_access(struct cache_t *cp,	/* cache to access */
   }
   
   if(repl==NULL){
+   
 
+   if(!strcmp(cp->name,"ul2")  && bypass[pindex] < 3){
+     return lat;
+   }
   /* select the appropriate block to replace, and re-link this entry to
      the appropriate place in the way list */
   switch (cp->policy) {
