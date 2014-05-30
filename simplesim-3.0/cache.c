@@ -57,6 +57,13 @@
 #include "misc.h"
 #include "machine.h"
 #include "cache.h"
+#include "conversion.c"
+
+
+
+
+
+
 
 /* cache access macros */
 #define CACHE_TAG(cp, addr)	((addr) >> (cp)->tag_shift)
@@ -489,6 +496,19 @@ cache_stats(struct cache_t *cp,		/* cache instance */
 	  cp->name,
 	  (double)cp->misses/sum, (double)(double)cp->replacements/sum,
 	  (double)cp->invalidations/sum);
+  /*
+  int i=0,j=0,count=0;
+  for(i=0;i<5000;i++){
+   count=0;
+    for(j=0;j<100;j++){
+      if(darr[i][j]!=0)
+        count++;
+      
+   }
+   if(count > 1 )
+      printf("Num of duplicates in %d index is %d\n",i,count);
+  }
+  */
 }
 
 /* access a cache, perform a CMD operation on cache CP at address ADDR,
@@ -508,12 +528,27 @@ cache_access(struct cache_t *cp,	/* cache to access */
 	     md_addr_t *repl_addr)	/* for address of replaced block */
 {
 
+  
   byte_t *p = vp;
   md_addr_t tag = CACHE_TAG(cp, addr);
   md_addr_t set = CACHE_SET(cp, addr);
   md_addr_t bofs = CACHE_BLK(cp, addr);
   struct cache_blk_t *blk, *repl;
   int lat = 0;
+  int pindex=0;
+  if(!strcmp(cp->name,"ul2")){
+    pindex=getIndex(addr);
+   /*
+    for(i=0;i<100;i++){
+      if(darr[pindex][i]==addr)
+       break;
+      if(darr[pindex][i]==0){
+        darr[pindex][i]=addr;
+        break;
+      }
+    }
+    */
+   }
 
   /* default replacement address */
   if (repl_addr)
@@ -569,6 +604,11 @@ cache_access(struct cache_t *cp,	/* cache to access */
   /* **MISS** */
   cp->misses++;
 
+  if(bypass[pindex] < 2){
+     bypass[pindex]++;
+     return lat;
+  }
+
   /* select the appropriate block to replace, and re-link this entry to
      the appropriate place in the way list */
   switch (cp->policy) {
@@ -586,7 +626,10 @@ cache_access(struct cache_t *cp,	/* cache to access */
   default:
     panic("bogus replacement policy");
   }
-
+  
+  if(!strcmp(cp->name,"ul2")){
+    bypass[repl->pindex]=repl->used*2;
+  }
   /* remove this block from the hash bucket chain, if hash exists */
   if (cp->hsize)
     unlink_htab_ent(cp, &cp->sets[set], repl);
@@ -651,6 +694,10 @@ cache_access(struct cache_t *cp,	/* cache to access */
   if (cp->hsize)
     link_htab_ent(cp, &cp->sets[set], repl);
 
+  if(!strcmp(cp->name,"ul2")){
+    repl->pindex=pindex;
+  }
+
   /* return latency of the operation */
   return lat;
 
@@ -687,11 +734,17 @@ cache_access(struct cache_t *cp,	/* cache to access */
   if (udata)
     *udata = blk->user_data;
 
+  if(!strcmp(cp->name,"ul2")){
+    blk->used=1;
+  }
+
   /* return first cycle data is available to access */
   return (int) MAX(cp->hit_latency, (blk->ready - now));
 
  cache_fast_hit: /* fast hit handler */
   
+  
+ 
   /* **FAST HIT** */
   cp->hits++;
 
@@ -716,7 +769,10 @@ cache_access(struct cache_t *cp,	/* cache to access */
   /* record the last block to hit */
   cp->last_tagset = CACHE_TAGSET(cp, addr);
   cp->last_blk = blk;
-
+  
+  if(!strcmp(cp->name,"ul2")){
+    blk->used=1;
+  }
   /* return first cycle data is available to access */
   return (int) MAX(cp->hit_latency, (blk->ready - now));
 }

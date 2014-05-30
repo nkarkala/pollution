@@ -96,7 +96,14 @@
 
 /* highly associative caches are implemented using a hash table lookup to
    speed block access, this macro decides if a cache is "highly associative" */
+
+
+
+
 #define CACHE_HIGHLY_ASSOC(cp)	((cp)->assoc > 4)
+
+//unsigned int darr[5000][100];
+int bypass[5000];
 
 /* cache replacement policy */
 enum cache_policy {
@@ -130,6 +137,8 @@ struct cache_blk_t
      defined in this structure! */
   byte_t data[1];		/* actual data block starts here, block size
 				   should probably be a multiple of 8 */
+  int used;
+  int pindex;
 };
 
 /* cache set definition (one or more blocks sharing the same set index) */
@@ -245,9 +254,6 @@ cache_reg_stats(struct cache_t *cp,	/* cache instance */
 void
 cache_stats(struct cache_t *cp,		/* cache instance */
 	    FILE *stream);		/* output stream */
-
-/* print cache stats */
-void cache_stats(struct cache_t *cp, FILE *stream);
 
 /* access a cache, perform a CMD operation on cache CP at address ADDR,
    places NBYTES of data at *P, returns latency of operation if initiated
