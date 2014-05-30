@@ -590,7 +590,7 @@ cache_access(struct cache_t *cp,	/* cache to access */
   
   cp->misses++;
  
-  if(!strcmp(cp->name,"ul2") && (cp->misses % 500)==0){
+  if(!strcmp(cp->name,"ul2") && (cp->misses % 4000)==0){
     int i;
     for(i=0;i<5000;i++)
      bypass[i]=0;
@@ -599,7 +599,9 @@ cache_access(struct cache_t *cp,	/* cache to access */
  
   /*coen */
   if(!strcmp(cp->name,"ul2")){
-    repl=replace_polluted(cp->sets[set].way_head);
+    repl=cp->sets[set].way_tail;
+    if(repl->polluted!=0)
+      repl=replace_polluted(cp->sets[set].way_head);
   }else {
     repl=NULL;
   }
@@ -627,10 +629,11 @@ cache_access(struct cache_t *cp,	/* cache to access */
   default:
     panic("bogus replacement policy");
   }
-  // coen 
+  
   if(!strcmp(cp->name,"ul2")){
     bypass[repl->index] = repl->used * 3; 
   }
+  
   
 }
  
