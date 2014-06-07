@@ -507,7 +507,10 @@ cache_access(struct cache_t *cp,	/* cache to access */
 	     byte_t **udata,		/* for return of user data ptr */
 	     md_addr_t *repl_addr)	/* for address of replaced block */
 {
-
+  int isl2=0;
+  if(!strcmp(cp->name,"ul2")){
+    isl2=1;
+  }
   byte_t *p = vp;
   md_addr_t tag = CACHE_TAG(cp, addr);
   md_addr_t set = CACHE_SET(cp, addr);
@@ -586,7 +589,7 @@ cache_access(struct cache_t *cp,	/* cache to access */
   default:
     panic("bogus replacement policy");
   }
-  if(repl->used==0){
+  if(isl2==1 && repl->used==0){
      no_blks_polluted+=1;
   }
   /* remove this block from the hash bucket chain, if hash exists */
@@ -652,8 +655,9 @@ cache_access(struct cache_t *cp,	/* cache to access */
   /* link this entry back into the hash table */
   if (cp->hsize)
     link_htab_ent(cp, &cp->sets[set], repl);
-
-  repl->used=0;
+  if(isl2==1){
+    repl->used=0;
+  }
   /* return latency of the operation */
   return lat;
 
@@ -686,7 +690,9 @@ cache_access(struct cache_t *cp,	/* cache to access */
   cp->last_tagset = CACHE_TAGSET(cp, addr);
   cp->last_blk = blk;
   
-  blk->used=1;
+  if(isl2==1){
+    blk->used=1;
+  }
   /* get user block data, if requested and it exists */
   if (udata)
     *udata = blk->user_data;
@@ -720,7 +726,9 @@ cache_access(struct cache_t *cp,	/* cache to access */
   /* record the last block to hit */
   cp->last_tagset = CACHE_TAGSET(cp, addr);
   cp->last_blk = blk;
-  blk->used=1;
+  if(isl2==1){
+    blk->used=1;
+  }
   /* return first cycle data is available to access */
   return (int) MAX(cp->hit_latency, (blk->ready - now));
 }
