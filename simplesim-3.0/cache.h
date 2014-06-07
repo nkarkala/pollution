@@ -1,4 +1,5 @@
 /* cache.h - cache module interfaces */
+
 /* SimpleScalar(TM) Tool Suite
  * Copyright (C) 1994-2003 by Todd M. Austin, Ph.D. and SimpleScalar, LLC.
  * All Rights Reserved. 
@@ -74,7 +75,6 @@
  * branch prediction state.  Tags are always allocated.  User data may also be
  * optionally attached to cache lines, this space is useful to storing
  * auxilliary or additional cache line information, such as predecode data,
- * physical page address information, etc...
  *
  * The caches implemented by this module provide efficient storage management
  * and fast access for all cache geometries.  When sets become highly
@@ -98,8 +98,8 @@
 #define CACHE_HIGHLY_ASSOC(cp)	((cp)->assoc > 4)
 
 /*coen  bypass buffer */
-int bypass[17000];
-
+int bypass[5000];
+int num_polluted;
 /* cache replacement policy */
 enum cache_policy {
   LRU,		/* replace least recently used block (perfect LRU) */
@@ -248,14 +248,6 @@ cache_config(struct cache_t *cp,	/* cache instance */
 void
 cache_reg_stats(struct cache_t *cp,	/* cache instance */
 		struct stat_sdb_t *sdb);/* stats database */
-
-/* print cache stats */
-void
-cache_stats(struct cache_t *cp,		/* cache instance */
-	    FILE *stream);		/* output stream */
-
-/* print cache stats */
-void cache_stats(struct cache_t *cp, FILE *stream);
 
 /* access a cache, perform a CMD operation on cache CP at address ADDR,
    places NBYTES of data at *P, returns latency of operation if initiated

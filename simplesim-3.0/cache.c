@@ -527,7 +527,11 @@ cache_access(struct cache_t *cp,	/* cache to access */
 	     md_addr_t *repl_addr)	/* for address of replaced block */
 {
    
-  
+  int isl2=0;
+  if(!strcmp(cp->name,"ul2"))
+  {
+    isl2=1;
+  } 
   byte_t *p = vp;
   md_addr_t tag = CACHE_TAG(cp, addr);
   md_addr_t set = CACHE_SET(cp, addr);
@@ -590,7 +594,7 @@ cache_access(struct cache_t *cp,	/* cache to access */
   
   cp->misses++;
  
-  if(!strcmp(cp->name,"ul2") && (cp->misses % 4000)==0){
+  if(isl2==1 && (cp->misses % 4000)==0){
     int i;
     for(i=0;i<5000;i++)
      bypass[i]=0;
@@ -598,9 +602,9 @@ cache_access(struct cache_t *cp,	/* cache to access */
 
  
   /*coen */
-  if(!strcmp(cp->name,"ul2")){
+  if(isl2==1){
     repl=cp->sets[set].way_tail;
-    if(repl->polluted!=0)
+    if(repl->polluted!=1 && num_polluted > 1)
       repl=replace_polluted(cp->sets[set].way_head);
   }else {
     repl=NULL;
@@ -609,7 +613,7 @@ cache_access(struct cache_t *cp,	/* cache to access */
   if(repl==NULL){
    
 
-   if(!strcmp(cp->name,"ul2")  && bypass[pindex] < 3){
+   if(isl2==1  && bypass[pindex] < 3){
      return lat;
    }
   /* select the appropriate block to replace, and re-link this entry to
@@ -629,14 +633,15 @@ cache_access(struct cache_t *cp,	/* cache to access */
   default:
     panic("bogus replacement policy");
   }
-  
-  if(!strcmp(cp->name,"ul2")){
-    bypass[repl->index] = repl->used * 3; 
-  }
-  
-  
-}
  
+}
+  if(isl2==1){
+    bypass[repl->index] = repl->used * 3;
+  }
+
+  if(isl2==1 && repl->polluted==0){
+    num_polluted--;
+  }
   /* remove this block from the hash bucket chain, if hash exists */
   if (cp->hsize)
     unlink_htab_ent(cp, &cp->sets[set], repl);
@@ -706,11 +711,14 @@ cache_access(struct cache_t *cp,	/* cache to access */
   /* return latency of the operation */
   /* Cache miss */
   /* coen */
-  if(!strcmp(cp->name,"ul2")){
+  if(isl2==1){
     if(bypass[pindex] > 3)
+      repl->polluted=0;
+    else{
       repl->polluted=1;
-    else
+      num_polluted++;
       bypass[pindex]++;
+    }
   }
   return lat;
  
@@ -748,13 +756,13 @@ cache_access(struct cache_t *cp,	/* cache to access */
     *udata = blk->user_data;
   
   /*coen */
-  if(!strcmp(cp->name,"ul2")){
+  if(isl2==1){
     if(bypass[pindex] > 3){
-      if( blk->polluted==1){
+      if( blk->polluted==0){
         blk->used=1;
       }
       else
-        blk->polluted=1;
+        blk->polluted=0;
     }
     else
       bypass[pindex]++;
@@ -793,12 +801,12 @@ cache_access(struct cache_t *cp,	/* cache to access */
   cp->last_tagset = CACHE_TAGSET(cp, addr);
   cp->last_blk = blk;
   /*coen*/
-  if(!strcmp(cp->name,"ul2")){
+  if(isl2==1){
     if(bypass[pindex] > 3){
-      if(blk->polluted==1)
+      if(blk->polluted==0)
         blk->used=1;
       else
-        blk->polluted=1;
+        blk->polluted=0;
     }
     else
       bypass[pindex]++;
