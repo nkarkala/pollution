@@ -586,7 +586,9 @@ cache_access(struct cache_t *cp,	/* cache to access */
   default:
     panic("bogus replacement policy");
   }
-
+  if(repl->used==0){
+     no_blks_polluted+=1;
+  }
   /* remove this block from the hash bucket chain, if hash exists */
   if (cp->hsize)
     unlink_htab_ent(cp, &cp->sets[set], repl);
@@ -651,6 +653,7 @@ cache_access(struct cache_t *cp,	/* cache to access */
   if (cp->hsize)
     link_htab_ent(cp, &cp->sets[set], repl);
 
+  repl->used=0;
   /* return latency of the operation */
   return lat;
 
@@ -682,7 +685,8 @@ cache_access(struct cache_t *cp,	/* cache to access */
   /* record the last block to hit */
   cp->last_tagset = CACHE_TAGSET(cp, addr);
   cp->last_blk = blk;
-
+  
+  blk->used=1;
   /* get user block data, if requested and it exists */
   if (udata)
     *udata = blk->user_data;
@@ -716,7 +720,7 @@ cache_access(struct cache_t *cp,	/* cache to access */
   /* record the last block to hit */
   cp->last_tagset = CACHE_TAGSET(cp, addr);
   cp->last_blk = blk;
-
+  blk->used=1;
   /* return first cycle data is available to access */
   return (int) MAX(cp->hit_latency, (blk->ready - now));
 }

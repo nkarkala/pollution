@@ -130,6 +130,7 @@ struct cache_blk_t
      defined in this structure! */
   byte_t data[1];		/* actual data block starts here, block size
 				   should probably be a multiple of 8 */
+  int used;
 };
 
 /* cache set definition (one or more blocks sharing the same set index) */
@@ -247,8 +248,6 @@ cache_stats(struct cache_t *cp,		/* cache instance */
 	    FILE *stream);		/* output stream */
 
 /* print cache stats */
-void cache_stats(struct cache_t *cp, FILE *stream);
-
 /* access a cache, perform a CMD operation on cache CP at address ADDR,
    places NBYTES of data at *P, returns latency of operation if initiated
    at NOW, places pointer to block user data in *UDATA, *P is untouched if
