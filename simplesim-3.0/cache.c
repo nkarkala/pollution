@@ -148,7 +148,7 @@ PBLK replace_polluted(struct cache_blk_t *head){
         {
           if(blk->status==0)
            return blk;
-          if (blk->polluted == 0)
+          if (blk->polluted == 1)
             return blk;
         }
     return NULL;
