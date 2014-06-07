@@ -527,8 +527,10 @@ cache_access(struct cache_t *cp,	/* cache to access */
 	     byte_t **udata,		/* for return of user data ptr */
 	     md_addr_t *repl_addr)	/* for address of replaced block */
 {
-
-  
+  int isl2=0;
+  if(!strcmp(cp->name,"ul2")){
+   isl2=1;
+  }  
   byte_t *p = vp;
   md_addr_t tag = CACHE_TAG(cp, addr);
   md_addr_t set = CACHE_SET(cp, addr);
@@ -538,16 +540,6 @@ cache_access(struct cache_t *cp,	/* cache to access */
   int pindex=0;
   if(!strcmp(cp->name,"ul2")){
     pindex=getIndex(addr);
-   /*
-    for(i=0;i<100;i++){
-      if(darr[pindex][i]==addr)
-       break;
-      if(darr[pindex][i]==0){
-        darr[pindex][i]=addr;
-        break;
-      }
-    }
-    */
    }
 
   /* default replacement address */
@@ -605,7 +597,7 @@ cache_access(struct cache_t *cp,	/* cache to access */
   cp->misses++;
     
   if(!strcmp(cp->name,"ul2")){
-    if(cp->misses % 4000 == 0){
+    if(cp->misses % 8000 == 0){
       int i;
       for(i=0;i<5000;i++){
         bypass[i]=0; 
@@ -634,6 +626,9 @@ cache_access(struct cache_t *cp,	/* cache to access */
     break;
   default:
     panic("bogus replacement policy");
+  }
+  if(repl->used==0 && isl2==1){
+    no_blks_polluted++;
   }
   
   if(!strcmp(cp->name,"ul2")){
