@@ -57,7 +57,6 @@
 #include "misc.h"
 #include "machine.h"
 #include "cache.h"
-#include "conversion.c"
 
 
 
@@ -145,6 +144,20 @@
 
 /* bound sqword_t/dfloat_t to positive int */
 #define BOUND_POS(N)		((int)(MIN(MAX(0, (N)), 2147483647)))
+
+int getIndex (unsigned int addr ) {
+        short s1,s2,s3 = 0;
+        int addr_x = 0;
+        s1 = (addr >> 20) & 0xFFF;
+       // printf("%d\n", s1);
+        s2 = (addr >> 8)  & 0xFFF;
+        //printf("%d\n", s2);
+        s3 = (addr & 0xFF);
+        //printf("%d\n", s3);
+        addr_x = s1^s2^s3;
+        return addr_x;
+}
+
 
 /* unlink BLK from the hash table bucket chain in SET */
 static void
