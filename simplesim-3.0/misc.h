@@ -85,6 +85,8 @@
 #define ROUND_UP(N,ALIGN)	(((N) + ((ALIGN)-1)) & ~((ALIGN)-1))
 #define ROUND_DOWN(N,ALIGN)	((N) & ~((ALIGN)-1))
 
+
+int no_blks_polluted;
 /* verbose output flag */
 extern int verbose;
 
