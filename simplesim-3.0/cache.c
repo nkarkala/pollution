@@ -589,9 +589,6 @@ cache_access(struct cache_t *cp,	/* cache to access */
   default:
     panic("bogus replacement policy");
   }
-  if(isl2==1 && repl->used==0){
-     no_blks_polluted+=1;
-  }
   /* remove this block from the hash bucket chain, if hash exists */
   if (cp->hsize)
     unlink_htab_ent(cp, &cp->sets[set], repl);
@@ -603,6 +600,9 @@ cache_access(struct cache_t *cp,	/* cache to access */
   /* write back replaced block data */
   if (repl->status & CACHE_BLK_VALID)
     {
+       if(isl2==1 && repl->used==0){
+             no_blks_polluted+=1;
+         } 
       cp->replacements++;
 
       if (repl_addr)
