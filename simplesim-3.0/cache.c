@@ -57,7 +57,7 @@
 #include "misc.h"
 #include "machine.h"
 #include "cache.h"
-#include "conversion.c"
+//#include "conversion.c"
 
 /* cache access macros */
 #define CACHE_TAG(cp, addr)	((addr) >> (cp)->tag_shift)
@@ -140,6 +140,19 @@
 /* bound sqword_t/dfloat_t to positive int */
 #define BOUND_POS(N)		((int)(MIN(MAX(0, (N)), 2147483647)))
 
+
+int getIndex (int addr ) {
+        short s1,s2,s3 = 0;
+        int addr_x = 0;
+        s1 = (addr >> 20) & 0xFFF;
+       // printf("%d\n", s1);
+        s2 = (addr >> 8)  & 0xFFF;
+        //printf("%d\n", s2);
+        s3 = (addr & 0xFF);
+        //printf("%d\n", s3);
+        addr_x = s1^s2^s3;
+        return addr_x;
+}
 
 /* coen  Replace polluted CODE  */
 PBLK replace_polluted(struct cache_blk_t *head){
@@ -594,7 +607,7 @@ cache_access(struct cache_t *cp,	/* cache to access */
   
   cp->misses++;
  
-  if(isl2==1 && (cp->misses % 4000)==0){
+  if(isl2==1 && (cp->misses % 8000)==0){
     int i;
     for(i=0;i<5000;i++)
      bypass[i]=0;
@@ -653,7 +666,8 @@ cache_access(struct cache_t *cp,	/* cache to access */
   /* write back replaced block data */
   if (repl->status & CACHE_BLK_VALID)
     {
-    
+   
+       
       cp->replacements++;
 
       if (repl_addr)
