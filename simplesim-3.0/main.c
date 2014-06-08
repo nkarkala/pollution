@@ -209,6 +209,7 @@ sim_print_stats(FILE *fd)		/* output stream */
   stat_print_stats(sim_sdb, fd);
   sim_aux_stats(fd);
   fprintf(fd, "\n");
+  printf("Number of cache blocks polluted is %d\n",no_blks_polluted);
 }
 
 /* print stats, uninitialize simulator components, and exit w/ exitcode */
