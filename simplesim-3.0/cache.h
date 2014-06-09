@@ -139,7 +139,10 @@ struct cache_blk_t
 				   should probably be a multiple of 8 */
   int used;
   int pindex;
+  int polluted;
 };
+
+typedef struct cache_blk_t *PBLK;
 
 /* cache set definition (one or more blocks sharing the same set index) */
 struct cache_set_t
@@ -246,15 +249,6 @@ cache_config(struct cache_t *cp,	/* cache instance */
 	     FILE *stream);		/* output stream */
 
 /* register cache stats */
-void
-cache_reg_stats(struct cache_t *cp,	/* cache instance */
-		struct stat_sdb_t *sdb);/* stats database */
-
-/* print cache stats */
-void
-cache_stats(struct cache_t *cp,		/* cache instance */
-	    FILE *stream);		/* output stream */
-
 /* access a cache, perform a CMD operation on cache CP at address ADDR,
    places NBYTES of data at *P, returns latency of operation if initiated
    at NOW, places pointer to block user data in *UDATA, *P is untouched if

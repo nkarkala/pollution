@@ -158,6 +158,18 @@ int getIndex (unsigned int addr ) {
         return addr_x;
 }
 
+PBLK replace_polluted(struct cache_blk_t *head){
+    PBLK blk=NULL;
+    PBLK repl_blk=NULL;
+    for (blk=head;blk;blk=blk->way_next)
+        {
+          if(blk->status==0)
+           return blk;
+          if (blk->polluted == 1)
+            repl_blk=blk;
+        }
+    return repl_blk;
+}
 
 /* unlink BLK from the hash table bucket chain in SET */
 static void
@@ -608,21 +620,31 @@ cache_access(struct cache_t *cp,	/* cache to access */
 
   /* **MISS** */
   cp->misses++;
-    
-  if(isl3==1){
-    if(cp->misses % 8000 == 0){
-      int i;
-      for(i=0;i<5000;i++){
-        bypass[i]=0; 
-      }
+  repl=NULL;  
+    if(isl3==1){
+     if((cp->misses) % 8000 == 0){
+       int i;
+       for(i=0;i<5000;i++){
+         bypass[i]=0; 
+       }
+     repl=cp->sets[set].way_tail;
+   
+    if(repl->polluted!=1)
+      repl=replace_polluted(cp->sets[set].way_head);
+    else
+      repl=NULL;
     }
-  }
-
-  if(bypass[pindex] < 3){
+ }
+ 
+  if(isl3==1){
+  if(bypass[pindex] < 3 && repl==NULL){
      bypass[pindex]++;
      return lat;
   }
-
+  }
+  
+  
+  if(repl==NULL){
   /* select the appropriate block to replace, and re-link this entry to
      the appropriate place in the way list */
   switch (cp->policy) {
@@ -640,6 +662,8 @@ cache_access(struct cache_t *cp,	/* cache to access */
   default:
     panic("bogus replacement policy");
   }
+}
+  
   if(repl->used==0 && isl3==1){
     no_blks_polluted++;
   }
@@ -647,6 +671,7 @@ cache_access(struct cache_t *cp,	/* cache to access */
   if(!strcmp(cp->name,"ul3")){
     bypass[repl->pindex]=repl->used*3;
   }
+
   /* remove this block from the hash bucket chain, if hash exists */
   if (cp->hsize)
     unlink_htab_ent(cp, &cp->sets[set], repl);
@@ -710,10 +735,18 @@ cache_access(struct cache_t *cp,	/* cache to access */
   /* link this entry back into the hash table */
   if (cp->hsize)
     link_htab_ent(cp, &cp->sets[set], repl);
-
+ 
+  
   if(!strcmp(cp->name,"ul3")){
     repl->pindex=pindex;
+    if(bypass[pindex] < 3){
+      repl->polluted=1;
+      bypass[pindex]++;
+    }
+    else
+     repl->polluted=0;
   }
+ 
 
   /* return latency of the operation */
   return lat;
@@ -750,10 +783,18 @@ cache_access(struct cache_t *cp,	/* cache to access */
   /* get user block data, if requested and it exists */
   if (udata)
     *udata = blk->user_data;
-
+  
   if(!strcmp(cp->name,"ul3")){
-    blk->used=1;
+ //   if(bypass[pindex] < 3)
+      bypass[pindex]++;
+  //  else{
+    //  if(blk->polluted==0)
+      blk->used=1;
+     // else
+        blk->polluted=0;
+ //   }
   }
+  
 
   /* return first cycle data is available to access */
   return (int) MAX(cp->hit_latency, (blk->ready - now));
@@ -788,8 +829,16 @@ cache_access(struct cache_t *cp,	/* cache to access */
   cp->last_blk = blk;
   
   if(!strcmp(cp->name,"ul3")){
-    blk->used=1;
+ //   if(bypass[pindex] < 3)
+      bypass[pindex]++;
+   // else{
+     // if(blk->polluted==0)
+      blk->used=1;
+     // else
+        blk->polluted=0;
+  //  }
   }
+ 
   /* return first cycle data is available to access */
   return (int) MAX(cp->hit_latency, (blk->ready - now));
 }
