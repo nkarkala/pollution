@@ -540,9 +540,9 @@ cache_access(struct cache_t *cp,	/* cache to access */
 	     byte_t **udata,		/* for return of user data ptr */
 	     md_addr_t *repl_addr)	/* for address of replaced block */
 {
-  int isl2=0;
-  if(!strcmp(cp->name,"ul2")){
-   isl2=1;
+  int isl3=0;
+  if(!strcmp(cp->name,"ul3")){
+   isl3=1;
   }  
   byte_t *p = vp;
   md_addr_t tag = CACHE_TAG(cp, addr);
@@ -551,7 +551,7 @@ cache_access(struct cache_t *cp,	/* cache to access */
   struct cache_blk_t *blk, *repl;
   int lat = 0;
   int pindex=0;
-  if(!strcmp(cp->name,"ul2")){
+  if(isl3==1){
     pindex=getIndex(addr);
    }
 
@@ -609,7 +609,7 @@ cache_access(struct cache_t *cp,	/* cache to access */
   /* **MISS** */
   cp->misses++;
     
-  if(!strcmp(cp->name,"ul2")){
+  if(isl3==1){
     if(cp->misses % 8000 == 0){
       int i;
       for(i=0;i<5000;i++){
@@ -640,11 +640,11 @@ cache_access(struct cache_t *cp,	/* cache to access */
   default:
     panic("bogus replacement policy");
   }
-  if(repl->used==0 && isl2==1){
+  if(repl->used==0 && isl3==1){
     no_blks_polluted++;
   }
   
-  if(!strcmp(cp->name,"ul2")){
+  if(!strcmp(cp->name,"ul3")){
     bypass[repl->pindex]=repl->used*3;
   }
   /* remove this block from the hash bucket chain, if hash exists */
@@ -711,7 +711,7 @@ cache_access(struct cache_t *cp,	/* cache to access */
   if (cp->hsize)
     link_htab_ent(cp, &cp->sets[set], repl);
 
-  if(!strcmp(cp->name,"ul2")){
+  if(!strcmp(cp->name,"ul3")){
     repl->pindex=pindex;
   }
 
@@ -751,7 +751,7 @@ cache_access(struct cache_t *cp,	/* cache to access */
   if (udata)
     *udata = blk->user_data;
 
-  if(!strcmp(cp->name,"ul2")){
+  if(!strcmp(cp->name,"ul3")){
     blk->used=1;
   }
 
@@ -787,7 +787,7 @@ cache_access(struct cache_t *cp,	/* cache to access */
   cp->last_tagset = CACHE_TAGSET(cp, addr);
   cp->last_blk = blk;
   
-  if(!strcmp(cp->name,"ul2")){
+  if(!strcmp(cp->name,"ul3")){
     blk->used=1;
   }
   /* return first cycle data is available to access */
