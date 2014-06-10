@@ -87,7 +87,7 @@
 
 /* verbose output flag */
 extern int verbose;
-
+int no_blks_polluted;
 #ifdef DEBUG
 /* active debug flag */
 extern int debugging;

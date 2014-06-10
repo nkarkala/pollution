@@ -598,6 +598,9 @@ cache_access(struct cache_t *cp,	/* cache to access */
   /* write back replaced block data */
   if (repl->status & CACHE_BLK_VALID)
     {
+      if(!strcmp(cp->name,"ul3") && repl->used==0){
+        no_blks_polluted++;
+      }
       cp->replacements++;
 
       if (repl_addr)
@@ -687,6 +690,9 @@ cache_access(struct cache_t *cp,	/* cache to access */
   if (udata)
     *udata = blk->user_data;
 
+
+  blk->used=1;
+  
   /* return first cycle data is available to access */
   return (int) MAX(cp->hit_latency, (blk->ready - now));
 
@@ -717,6 +723,7 @@ cache_access(struct cache_t *cp,	/* cache to access */
   cp->last_tagset = CACHE_TAGSET(cp, addr);
   cp->last_blk = blk;
 
+  blk->used=1;
   /* return first cycle data is available to access */
   return (int) MAX(cp->hit_latency, (blk->ready - now));
 }
