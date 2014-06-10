@@ -622,7 +622,7 @@ cache_access(struct cache_t *cp,	/* cache to access */
   cp->misses++;
   repl=NULL;  
     if(isl3==1){
-     if((cp->misses) % 8000 == 0){
+     if((cp->misses) % 5000 == 0){
        int i;
        for(i=0;i<5000;i++){
          bypass[i]=0; 
@@ -664,9 +664,6 @@ cache_access(struct cache_t *cp,	/* cache to access */
   }
 }
   
-  if(repl->used==0 && isl3==1){
-    no_blks_polluted++;
-  }
   
   if(!strcmp(cp->name,"ul3")){
     bypass[repl->pindex]=repl->used*3;
