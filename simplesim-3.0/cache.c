@@ -1,3 +1,4 @@
+/*abcd*/
 /* cache.c - cache module routines */
 
 /* SimpleScalar(TM) Tool Suite
